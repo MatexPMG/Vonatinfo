@@ -10,7 +10,6 @@ const port = process.env.PORT || 3000;
 app.use(compression());
 app.use(express.json());
 
-// ---------------- CORS Middleware ----------------
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
@@ -18,18 +17,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// ---------------- Ensure public directory ----------------
 const publicDir = path.join(__dirname, "public");
 if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 
-// ---------------- In-memory data ----------------
 let latestTrains = [];
 let latestFull = [];
 
-// ---------------- Static files ----------------
 app.use(express.static(publicDir, { etag: false, maxAge: 0 }));
 
-// ---------------- API routes ----------------
 app.get("/api/timetables", (req, res) => {
   res.json({ data: { vehiclePositions: latestFull } });
 });
@@ -38,15 +33,12 @@ app.get("/api/trains", (req, res) => {
   res.json({ data: latestTrains });
 });
 
-// ---------------- Health check ----------------
 app.get("/", (req, res) => {
   res.send("Backend running 🚆 — use /api/trains for lightweight data.");
 });
 
-// ---------------- MÁV GraphQL endpoint ----------------
 const url = "https://emma.mav.hu//otp2-backend/otp/routers/default/index/graphql";
 
-// ---------------- Full Query ----------------
 const FULL_QUERY = {
   query: `
   {
@@ -87,7 +79,6 @@ const FULL_QUERY = {
   variables: {}
 };
 
-// ---------------- Fetch helper ----------------
 async function fetchGraphQL(query) {
   try {
     const res = await fetch(url, {
@@ -103,19 +94,17 @@ async function fetchGraphQL(query) {
   }
 }
 
-// ---------------- Fetch + Filter Loop ----------------
 async function fetchFull() {
   const data = await fetchGraphQL(FULL_QUERY);
   if (!data?.data?.vehiclePositions) return;
 
   const now = Math.floor(Date.now() / 1000);
-  const cutoff = 10 * 60; //10 p
+  const cutoff = 10 * 60;
 
   let allTrains = data.data.vehiclePositions;
   const activeTrains = allTrains.filter(t => now - t.lastUpdated <= cutoff);
   latestFull = activeTrains;
 
-  //trains
   const newLight = latestFull.map(t => ({
     vehicleId: t.vehicleId || "",
     lat: t.lat,
@@ -131,13 +120,11 @@ async function fetchFull() {
 
   latestTrains = newLight;
 
-  // Write to files
   fs.writeFile(path.join(publicDir, "timetables.json"), JSON.stringify({ data: { vehiclePositions: latestFull } }), () => {});
   fs.writeFile(path.join(publicDir, "trains.json"), JSON.stringify({ data: newLight }), () => {});
 
   console.log(`Vonatok száma: ${(latestFull.length)-1} ✅`);
 
-  // POST request for one specific train
   app.post('/api/timetables', (req, res) => {
     const { tripShortName } = req.body;
   if (!tripShortName) return res.status(400).json({ error: "Missing tripShortName" });
@@ -149,11 +136,9 @@ async function fetchFull() {
   });
 }
 
-// ---------------- Interval ----------------
 fetchFull();
 setInterval(fetchFull, 15 * 1000);
 
-// ---------------- Start server ----------------
 app.listen(port, "0.0.0.0", () => {
   console.log(`🚉 server OK`);
 });
