@@ -3,9 +3,9 @@ let sel = null;
 let tLayer;
 
 let selID = null;
-const trainMarkers = new Map();
-const searchInput = document.getElementById('trainSearch');
-const suggestionsBox = document.getElementById('suggestions');
+const tMarkers = new Map();
+const srchIn = document.getElementById('trainSearch');
+const sugBox = document.getElementById('suggestions');
 
 function init() {
     map = L.map('map', {
@@ -72,15 +72,15 @@ function init() {
 
 init();
 
-let trainDataMap = new Map();
-let mapClickHandlerAttached = false;
+let tDMap = new Map();
+let click = false;
 
 function markers() {
   fetch('https://vinfo-production.up.railway.app/api/trains')
     .then(res => res.json())
     .then(json => {
       tLayer.clearLayers();
-      trainMarkers.clear();
+      tMarkers.clear();
 
       const trains = json.data || [];
 
@@ -88,7 +88,7 @@ function markers() {
 
         const vehicleId = train.vehicleId ?? "";
         const name = train.tripShortName ?? "";
-        trainDataMap.set(name, train);
+        tDMap.set(name, train);
 
         const delay = Math.round((train.nextStop?.arrivalDelay ?? 0) / 60);
         const lat = train.lat;
@@ -120,7 +120,7 @@ function markers() {
           }),
         });
 
-        trainMarkers.set(searchId, marker);
+        tMarkers.set(searchId, marker);
 
         marker.on('click', () => {
           selID = name;
@@ -159,7 +159,7 @@ function markers() {
           sel.setLatLng([lat, lon]);
       });
 
-      if (!mapClickHandlerAttached) {
+      if (!click) {
         map.on('click', () => {
           if (sel) {
             map.removeLayer(sel);
@@ -182,7 +182,7 @@ function markers() {
           }
           if (window.activeRoute) map.removeLayer(window.activeRoute);
         });
-        mapClickHandlerAttached = true;
+        click = true;
       }
     }
   );
@@ -199,16 +199,16 @@ function delCol(delay) {
 markers();
 setInterval(markers, 20000);
 
-searchInput.addEventListener('input', () => {
-  const query = searchInput.value.trim().toLowerCase();
-  suggestionsBox.innerHTML = '';
+srchIn.addEventListener('input', () => {
+  const query = srchIn.value.trim().toLowerCase();
+  sugBox.innerHTML = '';
 
   if (!query) {
-    suggestionsBox.style.display = 'none';
+    sugBox.style.display = 'none';
     return;
   }
 
-  const matches = Array.from(trainMarkers.keys())
+  const matches = Array.from(tMarkers.keys())
     .filter(name => name.toLowerCase().includes(query))
     .sort((a, b) => {
       const numA = parseInt(a.match(/\d+/)?.[0] || 0);
@@ -217,7 +217,7 @@ searchInput.addEventListener('input', () => {
     });
 
   if (matches.length === 0) {
-    suggestionsBox.style.display = 'none';
+    sugBox.style.display = 'none';
     return;
   }
 
@@ -228,32 +228,32 @@ searchInput.addEventListener('input', () => {
     div.innerHTML = `${name} <span class="loc">| ${locPart}</span>`;
 
     div.onclick = () => {
-      searchInput.value = match;
+      srchIn.value = match;
       simulateClick(match);
-      suggestionsBox.style.display = 'none';
+      sugBox.style.display = 'none';
     };
 
-    suggestionsBox.appendChild(div);
+    sugBox.appendChild(div);
   });
 
-  suggestionsBox.style.display = 'block';
+  sugBox.style.display = 'block';
 });
 
-searchInput.addEventListener('blur', () => {
+srchIn.addEventListener('blur', () => {
   setTimeout(() => {
-    suggestionsBox.style.display = 'none';
+    sugBox.style.display = 'none';
   }, 100);
 });
 
-searchInput.addEventListener('keydown', e => {
+srchIn.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    const input = searchInput.value.trim();
-    const exact = trainMarkers.get(input);
+    const input = srchIn.value.trim();
+    const exact = tMarkers.get(input);
     if (exact) {
       simulateClick(input);
     } else {
-      const match = Array.from(trainMarkers.keys())
+      const match = Array.from(tMarkers.keys())
         .filter(k => k.toLowerCase().includes(input.toLowerCase()))
         .sort((a, b) => {
           const na = parseInt(a.match(/\d+/)?.[0] || 0);
@@ -262,19 +262,19 @@ searchInput.addEventListener('keydown', e => {
         })[0];
       if (match) simulateClick(match);
     }
-    suggestionsBox.style.display = 'none';
+    sugBox.style.display = 'none';
   }
 });
 
 function simulateClick(name) {
-  const marker = trainMarkers.get(name);
+  const marker = tMarkers.get(name);
   if (marker) {
     marker.fire('click');
     map.flyTo(marker.getLatLng(), 12, {
       duration: 0.1
     })
   }
-  searchInput.value = '';
+  srchIn.value = '';
 }
 
 function d(encoded) {
@@ -554,13 +554,13 @@ function updateLocoSpeed(train) {
 function LocoUpdate(name) {
   if (locoInfoUpdater) clearInterval(locoInfoUpdater);
 
-  const train = trainDataMap.get(name);
+  const train = tDMap.get(name);
   if (!train) return;
 
   locoInfo(train);
 
   locoInfoUpdater = setInterval(() => {
-    const currentTrain = trainDataMap.get(name);
+    const currentTrain = tDMap.get(name);
     if (currentTrain) updateLocoSpeed(currentTrain);
   }, 5000);
 }
