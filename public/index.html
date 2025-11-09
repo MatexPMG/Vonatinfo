@@ -15,7 +15,6 @@
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/search.css">
 <link rel="stylesheet" href="css/marker.css">
-<link rel="stylesheet" href="css/filter.css">
 <link rel="stylesheet" href="css/timetable.css">
 <link rel="stylesheet" href="css/loco.css">
 <link rel="stylesheet" href="css/legend.css">
@@ -25,25 +24,6 @@
   <div class="leaflet-control leaflet-bar" id="search-container">
     <input type="text" id="trainSearch" placeholder="Vonatkeresés..." />
     <div id="suggestions"></div>
-  </div>
-</div>
-<div id="filter-panel">
-  <h3>Vonatok szűrése</h3>
-  <input id="filterTrip" list="tripList" placeholder="Train name">
-  <datalist id="tripList"></datalist>
-
-  <input id="filterVehicle" list="vehicleList" placeholder="Vehicle ID">
-  <datalist id="vehicleList"></datalist>
-
-  <input id="filterSeries" list="seriesList" placeholder="Loco series">
-  <datalist id="seriesList"></datalist>
-
-  <input id="filterCategory" list="catList" placeholder="Category">
-  <datalist id="catList"></datalist>
-
-  <div class="filter-buttons">
-    <button onclick="applyFilters()">Apply</button>
-    <button onclick="resetFilters()">Reset</button>
   </div>
 </div>
 <div id="legend">
@@ -73,12 +53,6 @@
   </a>
 </div>
 <div id="map"></div>
-<script src="js/init.js"></script>
-<script src="js/markers.js"></script>
-<script src="js/filter.js"></script>
-<script src="js/search.js"></script>
-<script src="js/poly.js"></script>
-<script src="js/timetable.js"></script>
-<script src="js/loco.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
