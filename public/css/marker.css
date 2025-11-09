@@ -1,0 +1,52 @@
+.train-marker {
+  position: relative;
+  width: 18;
+  height: 18;
+}
+
+.train-marker .circle {
+  position: absolute;
+  width: 16;
+  height: 16;
+  top: 0;
+  left: 0;
+
+  border: 1px solid rgb(0, 0, 0);
+  border-radius: 50%;
+}
+
+.train-marker .arrow {
+  position: absolute;
+  width: 2;
+  height: 2;
+  top: 50%;
+  left: 50%;
+
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-bottom: 7px solid rgb(0, 0, 0);
+}
+
+.custom-popup .leaflet-popup-content-wrapper {
+  color: rgb(255, 255, 255);
+  background-color: rgba(0, 68, 141, 0.8);
+
+  font-weight: normal;
+  font-size: 12;
+
+  padding: 5;
+  padding-bottom: 3;
+  border-radius: 0;
+
+  box-shadow: none;
+  transform: translateX(-50%);
+}
+
+.custom-popup .leaflet-popup-tip-container {
+  display: none;
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 0;
+  white-space: nowrap;
+}

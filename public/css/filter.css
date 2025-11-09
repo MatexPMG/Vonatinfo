@@ -1,0 +1,102 @@
+/* --- FILTER BUTTON --- */
+.leaflet-control-filter {
+  background: white url(/img/filter.png) no-repeat center center;
+  background-size: 18px 18px;
+  background-clip: padding-box;
+
+  /*vedd ki*/
+  display: none;
+
+  left: 350;
+  width: 34px;
+  height: 34px;
+
+	border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+
+  cursor: pointer;
+  transition: background-color;
+
+  z-index: 1050;
+}
+
+.leaflet-control-filter:hover {
+  background-color: #f4f4f4;
+}
+
+/* --- FILTER PANEL --- */
+#filter-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  display: block;
+
+  background: rgb(255, 255, 255);
+  background-clip: padding-box;
+
+  border-right: 2px solid rgba(0, 0, 0, 0.2);
+  padding: 15px 20px;
+  overflow-y: auto;
+  z-index: 1010;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+#filter-panel.active {
+  transform: translateX(0);
+}
+
+/* --- FILTER INPUTS --- */
+#filter-panel input,
+#filter-panel select {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fafafa;
+}
+
+#filter-panel input:focus,
+#filter-panel select:focus {
+  outline: none;
+  border-color: rgba(0, 68, 141, 0.75);
+  background: #fff;
+}
+
+/* --- FILTER PANEL HEADER --- */
+#filter-panel h3 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* --- FILTER PANEL BUTTONS --- */
+.filter-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.filter-buttons button {
+  flex: 1;
+  margin: 0 5px;
+  background: rgba(0, 68, 141, 0.75);
+  color: #fff;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.filter-buttons button:hover {
+  background: #2673dd;
+}

@@ -1,0 +1,76 @@
+#trainSearch {
+  position: absolute;
+  height: 35;
+  width: 245;
+
+  text-indent: 5;
+
+	border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+
+  background-clip: padding-box;
+  background-image: url(/img/sea.png);
+  background-position: 210px 2px; 
+  background-repeat: no-repeat;
+}
+
+#trainSearch::placeholder{
+  color: rgba(0, 0, 0, 0.6);
+}
+
+#trainSearch:focus {
+  border-bottom: 2px solid rgba(0, 68, 141, 0.75);
+  transition: border-bottom 0.5s ease;
+}
+
+#trainSearch:hover {
+  background-color: rgb(244, 244, 244);
+}
+
+#suggestions {
+  position: absolute;
+  width: 241;
+  max-height: 150;
+  top: 35;
+
+	border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+
+  background: rgba(255, 255, 255, 0.8);
+  background-clip: padding-box;
+
+  font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+  font-size: 14;
+
+  display: none;
+  overflow-y: auto;
+}
+
+#suggestions .loc {
+  font-weight: bold;
+}
+
+#suggestions div {
+  padding: 5 8;
+  cursor: pointer;
+}
+
+#suggestions div:hover {
+  color: white;
+
+  background: rgba(0, 68, 141, 0.8);
+}
+
+#suggestions div {
+  padding: 6 8;
+  cursor: pointer;
+  border-bottom: 1px solid rgb(204, 204, 204);
+}
+
+#suggestions div:last-child {
+  border-bottom: none;
+}
+
+#suggestions::-webkit-scrollbar {
+  display: none;
+}
