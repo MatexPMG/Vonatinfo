@@ -86,7 +86,7 @@ function markers() {
 
       trains.forEach(train => {
 
-        const vehicleId = train.vehicleId ?? "";
+        const ID = train.vehicleId ?? "";
         const name = train.tripShortName ?? "";
         tDMap.set(name, train);
 
@@ -98,7 +98,7 @@ function markers() {
         const dest = train.tripHeadsign ?? "";
         const icon = train.routeShortName ?? "";
 
-        const UIC = vehicleId.includes(':') ? vehicleId.split(':')[1] : vehicleId;
+        const UIC = ID.includes(':') ? ID.split(':')[1] : ID;
         const loc = UIC ? `${UIC.slice(5, 8)} ${UIC.slice(8, 11)}` : "";
         const searchId = `${name} | ${loc}`;
 
