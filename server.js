@@ -162,12 +162,22 @@ async function fetchFull() {
     }
 
     // Remove trains whose final arrival time has already passed
-    const arr = train.trip?.arrivalStoptime;
-    if (arr?.scheduledArrival != null) {
-      const arrivalTime = arr.scheduledArrival + (arr.arrivalDelay || 0);
-      if ((UNIX24+60) > arrivalTime) {
-        trainMap.delete(id);
-      }
+  const arr = train.trip?.arrivalStoptime;
+  if (arr?.scheduledArrival != null) {
+    const arrivalTime = arr.scheduledArrival + (arr.arrivalDelay || 0);
+    const twoMinutes = 120;
+
+    // Get current time in seconds since midnight (Europe/Budapest)
+    const UNIX24 = (() => {
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Budapest" }));
+      return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    })();
+
+    // Only delete if train arrived more than 2 minutes ago
+    // AND hasn't been updated in the last 2 minutes
+    if (UNIX24 > arrivalTime + twoMinutes && now - train.lastUpdated > twoMinutes) {
+      trainMap.delete(id);
+    }
     }
   }
 
