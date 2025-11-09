@@ -85,7 +85,6 @@ function markers() {
       const trains = json.data || [];
 
       trains.forEach(train => {
-
         const ID = train.vehicleId ?? "";
         const name = train.tripShortName ?? "";
         tDMap.set(name, train);
@@ -103,21 +102,21 @@ function markers() {
         const searchId = `${name} | ${loc}`;
 
         const marker = L.marker([lat, lon], {
-          trainData: train,
-          UIC: loc,
-          icon: L.divIcon({
-            html: `
+            trainData: train,
+            UIC: loc,
+            icon: L.divIcon({
+             html: `
               <div class="train-marker">
-                <div class="circle" style="background-color: ${delCol(delay)};"></div>
-                ${speed > 0 ? `
-                  <div class="arrow" style="
-                    transform: translate(-50%, -50%) rotate(${heading}deg) translateY(-13px);
-                  "></div>` : ""}
+              <div class="circle" style="background-color: ${delCol(delay)};"></div>
+              ${speed > 0 ? `
+                <div class="arrow" style="
+                transform: translate(-50%, -50%) rotate(${heading}deg) translateY(-13px);
+                "></div>` : ""}
               </div>
-            `,
-            className: "marker",
-            iconAnchor: [9, 9],
-          }),
+              `,
+             className: "marker",
+             iconAnchor: [9, 9],
+            }),
         });
 
         tMarkers.set(searchId, marker);
@@ -229,7 +228,7 @@ srchIn.addEventListener('input', () => {
 
     div.onclick = () => {
       srchIn.value = match;
-      simulateClick(match);
+      clickSim(match);
       sugBox.style.display = 'none';
     };
 
@@ -251,7 +250,7 @@ srchIn.addEventListener('keydown', e => {
     const input = srchIn.value.trim();
     const exact = tMarkers.get(input);
     if (exact) {
-      simulateClick(input);
+      clickSim(input);
     } else {
       const match = Array.from(tMarkers.keys())
         .filter(k => k.toLowerCase().includes(input.toLowerCase()))
@@ -260,13 +259,13 @@ srchIn.addEventListener('keydown', e => {
           const nb = parseInt(b.match(/\d+/)?.[0] || 0);
           return na - nb;
         })[0];
-      if (match) simulateClick(match);
+      if (match) clickSim(match);
     }
     sugBox.style.display = 'none';
   }
 });
 
-function simulateClick(name) {
+function clickSim(name) {
   const marker = tMarkers.get(name);
   if (marker) {
     marker.fire('click');
