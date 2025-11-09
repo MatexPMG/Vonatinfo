@@ -491,6 +491,7 @@ function formatTime(seconds) {
 let locoData = {};
 let locoInfoUpdater = null;
 
+
 fetch('locos.json')
   .then(res => res.json())
   .then(data => {
