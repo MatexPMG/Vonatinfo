@@ -99,7 +99,7 @@ async function fetchFull() {
   if (!data?.data?.vehiclePositions) return;
 
   const now = Math.floor(Date.now() / 1000);
-  const cutoff = 10 * 60;
+  const cutoff = 600;
 
   let allTrains = data.data.vehiclePositions;
   const activeTrains = allTrains.filter(t => now - t.lastUpdated <= cutoff);
@@ -137,7 +137,7 @@ async function fetchFull() {
 }
 
 fetchFull();
-setInterval(fetchFull, 15 * 1000);
+setInterval(fetchFull, 15000);
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`🚉 server OK`);
