@@ -101,12 +101,40 @@ async function fetchFull() {
   const now = Math.floor(Date.now() / 1000);
   const cutoff = 600;
 
-  let allTrains = data.data.vehiclePositions;
-  const activeTrains = allTrains.filter(t => now - t.lastUpdated <= cutoff);
-  latestFull = activeTrains;
+  const trainMap = new Map(latestFull.map(t => [t.trip?.tripShortName, t]));
 
-  const newLight = latestFull.map(t => ({
-    vehicleId: t.vehicleId || "",
+  for (const t of data.data.vehiclePositions) {
+    const existing = trainMap.get(t.trip?.tripShortName);
+    if (!existing || t.lastUpdated > existing.lastUpdated) {
+      trainMap.set(t.trip?.tripShortName, t);
+    }
+  }
+
+  for (const [id, train] of trainMap) {
+
+    if (now - train.lastUpdated > cutoff) trainMap.delete(id);
+
+    const arr = train.trip?.arrivalStoptime;
+    if (arr?.scheduledArrival != null) {
+      const scheduled = arr.scheduledArrival;
+      const delay = arr.arrivalDelay || 0;
+      const arrivalTime = scheduled + delay;
+    
+      const UNIX24 = (() => {
+        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Budapest" }));
+        return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      })();
+
+      if (UNIX24 > arrivalTime) {
+        trainMap.delete(id);
+      }
+    }
+  }
+
+  const newFull = Array.from(trainMap.values());
+  latestFull = newFull;
+
+  const newLight = newFull.map(t => ({    vehicleId: t.vehicleId || "",
     lat: t.lat,
     lon: t.lon,
     heading: t.heading,
