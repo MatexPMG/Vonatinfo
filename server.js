@@ -111,24 +111,7 @@ async function fetchFull() {
   }
 
   for (const [id, train] of trainMap) {
-
     if (now - train.lastUpdated > cutoff) trainMap.delete(id);
-
-    const arr = train.trip?.arrivalStoptime;
-    if (arr?.scheduledArrival != null) {
-      const scheduled = arr.scheduledArrival;
-      const delay = arr.arrivalDelay || 0;
-      const arrivalTime = scheduled + delay;
-    
-      const UNIX24 = (() => {
-        const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Budapest" }));
-        return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-      })();
-
-      if (UNIX24 > arrivalTime) {
-        trainMap.delete(id);
-      }
-    }
   }
 
   const newFull = Array.from(trainMap.values());
