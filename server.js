@@ -165,7 +165,7 @@ async function fetchFull() {
     const arr = train.trip?.arrivalStoptime;
     if (arr?.scheduledArrival != null) {
       const arrivalTime = arr.scheduledArrival + (arr.arrivalDelay || 0);
-      if (UNIX24 > arrivalTime) {
+      if ((UNIX24+180) > arrivalTime) {
         trainMap.delete(id);
       }
     }
