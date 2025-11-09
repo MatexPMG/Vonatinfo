@@ -1,8 +1,8 @@
 let map;
-let selected = null;
-let trainLayer;
+let sel = null;
+let tLayer;
 
-let selectedTrainId = null;
+let selID = null;
 const trainMarkers = new Map();
 const searchInput = document.getElementById('trainSearch');
 const suggestionsBox = document.getElementById('suggestions');
@@ -52,7 +52,7 @@ function init() {
       "Nyomtáv": ormGauge,
     };
 
-    trainLayer = L.layerGroup().addTo(map);
+    tLayer = L.layerGroup().addTo(map);
 
     L.control.layers(ormLayers).addTo(map);
     OSM.addTo(map);
@@ -79,7 +79,7 @@ function markers() {
   fetch('https://vinfo-production.up.railway.app/api/trains')
     .then(res => res.json())
     .then(json => {
-      trainLayer.clearLayers();
+      tLayer.clearLayers();
       trainMarkers.clear();
 
       const trains = json.data || [];
@@ -123,12 +123,12 @@ function markers() {
         trainMarkers.set(searchId, marker);
 
         marker.on('click', () => {
-          selectedTrainId = name;
+          selID = name;
           TTupdate(train);
           LocoUpdate(name);
 
-          if (selected) map.removeLayer(selected);
-          selected = L.circleMarker([lat, lon], {
+          if (sel) map.removeLayer(sel);
+          sel = L.circleMarker([lat, lon], {
             radius: 22,
             color: 'aqua',
             fillColor: 'aqua',
@@ -153,19 +153,19 @@ function markers() {
         marker.on('mouseover', () => marker.bindPopup(popup).openPopup());
         marker.on('mouseout', () => marker.closePopup());
 
-        trainLayer.addLayer(marker);
+        tLayer.addLayer(marker);
 
-        if (selectedTrainId === name && selected)
-          selected.setLatLng([lat, lon]);
+        if (selID === name && sel)
+          sel.setLatLng([lat, lon]);
       });
 
       if (!mapClickHandlerAttached) {
         map.on('click', () => {
-          if (selected) {
-            map.removeLayer(selected);
-            selected = null;
+          if (sel) {
+            map.removeLayer(sel);
+            sel = null;
           }
-          selectedTrainId = null;
+          selID = null;
 
           document.getElementById("train-info").style.display = "none";
           document.getElementById("loco-info").style.display = "none";
