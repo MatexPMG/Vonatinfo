@@ -99,7 +99,7 @@ async function fetchFull() {
   if (!data?.data?.vehiclePositions) return;
 
   const now = Math.floor(Date.now() / 1000);
-  const cutoff = 600;
+  const cutoff = 180;
 
   const trainMap = new Map(latestFull.map(t => [t.trip?.tripShortName, t]));
 
