@@ -491,7 +491,7 @@ function formatTime(seconds) {
 let locoData = {};
 let locoInfoUpdater = null;
 
-fetch('https://vonatinfo-production.up.railway.app/locos.json')
+fetch('locos.json')
   .then(res => res.json())
   .then(data => {
     locoData = data;
