@@ -99,21 +99,79 @@ async function fetchFull() {
   if (!data?.data?.vehiclePositions) return;
 
   const now = Math.floor(Date.now() / 1000);
-  const cutoff = 180;
+  const cutoff = 600; // 10 minutes
+  const UNIX24 = (() => {
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Budapest" }));
+    return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  })();
 
+  // Keep current trains in a map
   const trainMap = new Map(latestFull.map(t => [t.trip?.tripShortName, t]));
 
+  // ---- Process new incoming vehicles ----
   for (const t of data.data.vehiclePositions) {
-    const existing = trainMap.get(t.trip?.tripShortName);
-    if (!existing || t.lastUpdated > existing.lastUpdated) {
-      trainMap.set(t.trip?.tripShortName, t);
+    const id = t.trip?.tripShortName;
+    if (!id) continue;
+
+    const existing = trainMap.get(id);
+
+    // Compute new train's arrival time (seconds since midnight CET)
+    const arrNew = t.trip?.arrivalStoptime;
+    const arrivalTimeNew =
+      arrNew?.scheduledArrival != null
+        ? arrNew.scheduledArrival + (arrNew.arrivalDelay || 0)
+        : null;
+
+    if (existing) {
+      // Compute old train's arrival time
+      const arrOld = existing.trip?.arrivalStoptime;
+      const arrivalTimeOld =
+        arrOld?.scheduledArrival != null
+          ? arrOld.scheduledArrival + (arrOld.arrivalDelay || 0)
+          : null;
+
+      // If the new data refers to an already-arrived train, but the old one hasn't arrived yet → ignore update
+      if (
+        arrivalTimeNew != null &&
+        arrivalTimeOld != null &&
+        arrivalTimeNew < UNIX24 &&
+        arrivalTimeOld > UNIX24
+      ) {
+        continue; // ignore old/messed-up update
+      }
+
+      // Otherwise, update only if newer lastUpdated or later arrival time
+      if (
+        t.lastUpdated > existing.lastUpdated ||
+        (arrivalTimeNew != null && arrivalTimeOld != null && arrivalTimeNew >= arrivalTimeOld)
+      ) {
+        trainMap.set(id, t);
+      }
+    } else {
+      // New train — add to map
+      trainMap.set(id, t);
     }
   }
 
+  // ---- Cleanup: remove old or finished trains ----
   for (const [id, train] of trainMap) {
-    if (now - train.lastUpdated > cutoff) trainMap.delete(id);
+    // Remove stale trains
+    if (now - train.lastUpdated > cutoff) {
+      trainMap.delete(id);
+      continue;
+    }
+
+    // Remove trains whose final arrival time has already passed
+    const arr = train.trip?.arrivalStoptime;
+    if (arr?.scheduledArrival != null) {
+      const arrivalTime = arr.scheduledArrival + (arr.arrivalDelay || 0);
+      if (UNIX24 > arrivalTime) {
+        trainMap.delete(id);
+      }
+    }
   }
 
+  // ---- Save updated train data ----
   const newFull = Array.from(trainMap.values());
   latestFull = newFull;
 
