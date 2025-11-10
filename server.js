@@ -34,7 +34,7 @@ app.get("/api/trains", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Backend running 🚆 — use /api/trains for lightweight data.");
+  res.send("Udv itt a Vonatinfo backendjen");
 });
 
 const url = "https://emma.mav.hu//otp2-backend/otp/routers/default/index/graphql";
