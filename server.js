@@ -165,7 +165,6 @@ async function fetchFull() {
   const arr = train.trip?.arrivalStoptime;
   if (arr?.scheduledArrival != null) {
     const arrivalTime = arr.scheduledArrival + (arr.arrivalDelay || 0);
-    const twoMinutes = 120;
 
     // Get current time in seconds since midnight (Europe/Budapest)
     const UNIX24 = (() => {
@@ -175,7 +174,7 @@ async function fetchFull() {
 
     // Only delete if train arrived more than 2 minutes ago
     // AND hasn't been updated in the last 2 minutes
-    if (UNIX24 > arrivalTime + twoMinutes && now - train.lastUpdated > twoMinutes) {
+    if (UNIX24 > arrivalTime + 60 && now - train.lastUpdated > 60) {
       trainMap.delete(id);
     }
     }
