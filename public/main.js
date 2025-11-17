@@ -27,7 +27,7 @@ function init() {
     const ormStandard = L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
         attribution: attr
     });
-    const ormSignals = L.tileLayer('https://{s}.tiles.openrailwaymap.org/signals/{z}/{x}/{y}.png', {
+    const ormSignals = L.tileLayer('https://vonatinfo-production.up.railway.app/tiles/{z}/{x}/{y}.png', {
         attribution: attr
     });
     const ormElectrification = L.tileLayer('https://{s}.tiles.openrailwaymap.org/electrification/{z}/{x}/{y}.png', {
