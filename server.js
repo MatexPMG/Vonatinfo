@@ -27,20 +27,25 @@ app.use(express.static(publicDir, { etag: false, maxAge: 0 }));
 
 //ORM tilechache
 
-const TILE_CACHE = path.join(__dirname, "tilecache");
-if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
+const TILE_CACHE_BASE = path.join(__dirname, "tilecache");
+if (!fs.existsSync(TILE_CACHE_BASE)) fs.mkdirSync(TILE_CACHE_BASE, { recursive: true });
 
-// Serve ORM tiles from /tiles/{z}/{x}/{y}.png
+// Serve ORM tiles from /tiles/{layer}/{z}/{x}/{y}.png
 app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
   const { layer, z, x, y } = req.params;
-  const TILE_CACHE = path.join(__dirname, "tilecache", layer);
-  if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
+  const zoom = parseInt(z, 10);
+
+  // Only cache zoom levels 12–16
+  const cacheEnabled = zoom >= 12 && zoom <= 16;
+
+  const TILE_CACHE = path.join(TILE_CACHE_BASE, layer);
+  if (cacheEnabled && !fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
 
   const cachePath = path.join(TILE_CACHE, `${z}_${x}_${y}.png`);
 
   try {
     // Serve from cache if exists
-    if (fs.existsSync(cachePath)) {
+    if (cacheEnabled && fs.existsSync(cachePath)) {
       res.setHeader("Content-Type", "image/png");
       return res.sendFile(cachePath);
     }
@@ -60,7 +65,9 @@ app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
     }
 
     const buffer = await response.buffer();
-    fs.writeFile(cachePath, buffer, () => {}); // Save to cache
+
+    // Save to cache only for allowed zooms
+    if (cacheEnabled) fs.writeFile(cachePath, buffer, () => {});
 
     res.setHeader("Content-Type", "image/png");
     return res.send(buffer);
