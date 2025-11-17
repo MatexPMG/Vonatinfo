@@ -1,0 +1,34 @@
+services:
+  tms:
+  wmts:
+
+layers:
+  - name: orm_hu
+    title: OpenRailwayMap Hungary (cached)
+    sources: [orm_cache]
+
+caches:
+  orm_cache:
+    sources: [orm]
+    grids: [webmercator]
+    format: image/png
+    cache:
+      type: file
+      directory: ./cache
+    disable_storage: false
+
+sources:
+  orm:
+    type: tile
+    url: https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png
+    grid: webmercator
+    transparent: true
+
+    http:
+      headers:
+        User-Agent: "Mozilla/5.0 (compatible; OpenRailwayMapPersonalUse)"
+        Referer: "https://www.openrailwaymap.org/"
+
+grids:
+  webmercator:
+    base: GLOBAL_WEBMERCATOR
