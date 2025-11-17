@@ -31,20 +31,22 @@ const TILE_CACHE = path.join(__dirname, "tilecache");
 if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
 
 // Serve ORM tiles from /tiles/{z}/{x}/{y}.png
-app.get("/tiles/:z/:x/:y.png", async (req, res) => {
-  const { z, x, y } = req.params;
+app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
+  const { layer, z, x, y } = req.params;
+  const TILE_CACHE = path.join(__dirname, "tilecache", layer);
+  if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
+
   const cachePath = path.join(TILE_CACHE, `${z}_${x}_${y}.png`);
 
   try {
-    // --- 1. Serve from cache if exists ---
+    // Serve from cache if exists
     if (fs.existsSync(cachePath)) {
       res.setHeader("Content-Type", "image/png");
       return res.sendFile(cachePath);
     }
 
-    // --- 2. fetch from OpenRailwayMap ---
-    const url = `https://tiles.openrailwaymap.org/standard/${z}/${x}/${y}.png`;
-
+    // Fetch from OpenRailwayMap
+    const url = `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`;
     const response = await fetch(url, {
       headers: {
         "User-Agent": "VonatinfoTileProxy/1.0",
@@ -53,14 +55,12 @@ app.get("/tiles/:z/:x/:y.png", async (req, res) => {
     });
 
     if (!response.ok) {
-      console.log(`❌ ORM returned ${response.status} for ${z}/${x}/${y}`);
+      console.log(`❌ ORM returned ${response.status} for ${layer}/${z}/${x}/${y}`);
       return res.status(response.status).send("tile not available");
     }
 
     const buffer = await response.buffer();
-
-    // --- 3. Save to cache ---
-    fs.writeFile(cachePath, buffer, () => {});
+    fs.writeFile(cachePath, buffer, () => {}); // Save to cache
 
     res.setHeader("Content-Type", "image/png");
     return res.send(buffer);

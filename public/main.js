@@ -24,21 +24,11 @@ function init() {
 
     const attr = ' CC-BY-SA <a href="https://openrailwaymap.org/">OpenRailwayMap</a>';
 
-    const ormStandard = L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
-        attribution: attr
-    });
-    const ormSignals = L.tileLayer('https://vonatinfo-production.up.railway.app/tiles/{z}/{x}/{y}.png', {
-        attribution: attr
-    });
-    const ormElectrification = L.tileLayer('https://{s}.tiles.openrailwaymap.org/electrification/{z}/{x}/{y}.png', {
-        attribution: attr
-    });
-    const ormGauge = L.tileLayer('https://{s}.tiles.openrailwaymap.org/gauge/{z}/{x}/{y}.png', {
-        attribution: attr
-    });
-    const ormMaxspeed = L.tileLayer('https://{s}.tiles.openrailwaymap.org/maxspeed/{z}/{x}/{y}.png', {
-        attribution: attr
-    });
+const ormStandard = L.tileLayer('https://vonatinfo-production.up.railway.app/tiles/standard/{z}/{x}/{y}.png', { attribution: attr });
+const ormSignals = L.tileLayer('https://vonatinfo-production.up.railway.app/tiles/signals/{z}/{x}/{y}.png', { attribution: attr });
+const ormElectrification = L.tileLayer('https://vonatinfo-production.up.railway.app/tiles/electrification/{z}/{x}/{y}.png', { attribution: attr });
+const ormGauge = L.tileLayer('https://vonatinfo-production.up.railway.app/tiles/gauge/{z}/{x}/{y}.png', { attribution: attr });
+const ormMaxspeed = L.tileLayer('https://vonatinfo-production.up.railway.app/tiles/maxspeed/{z}/{x}/{y}.png', { attribution: attr });
 
     const OSM = L.tileLayer.grayscale('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: 'Térképadatok © <a href="https://openstreetmap.org/">OpenStreetMap</a> szerkesztők'
