@@ -60,7 +60,7 @@ function isTileInEurope(x, y, z) {
 }
 
 // ------ CLEANUP: delete tiles older than 7 days ------
-const CLEANUP_DAYS = 7;
+const CLEANUP_DAYS = 1;
 setInterval(() => {
   const cutoff = Date.now() - CLEANUP_DAYS * 24 * 3600 * 1000;
 
