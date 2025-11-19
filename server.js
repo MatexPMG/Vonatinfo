@@ -25,52 +25,6 @@ let latestFull = [];
 
 app.use(express.static(publicDir, { etag: false, maxAge: 0 }));
 
-//ORM tilechache
-
-const TILE_CACHE = path.join(__dirname, "tilecache");
-if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
-
-// Serve ORM tiles from /tiles/{z}/{x}/{y}.png
-app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
-  const { layer, z, x, y } = req.params;
-  const TILE_CACHE = path.join(__dirname, "tilecache", layer);
-  if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
-
-  const cachePath = path.join(TILE_CACHE, `${z}_${x}_${y}.png`);
-
-  try {
-    // Serve from cache if exists
-    if (fs.existsSync(cachePath)) {
-      res.setHeader("Content-Type", "image/png");
-      return res.sendFile(cachePath);
-    }
-
-    // Fetch from OpenRailwayMap
-    const url = `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`;
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "VonatinfoTileProxy/1.0",
-        "Referer": "https://www.openrailwaymap.org/"
-      }
-    });
-
-    if (!response.ok) {
-      console.log(`❌ ORM returned ${response.status} for ${layer}/${z}/${x}/${y}`);
-      return res.status(response.status).send("tile not available");
-    }
-
-    const buffer = await response.buffer();
-    fs.writeFile(cachePath, buffer, () => {}); // Save to cache
-
-    res.setHeader("Content-Type", "image/png");
-    return res.send(buffer);
-
-  } catch (err) {
-    console.error("Tile proxy error:", err.message);
-    return res.status(500).send("Internal tile proxy error");
-  }
-});
-
 app.get("/api/timetables", (req, res) => {
   res.json({ data: { vehiclePositions: latestFull } });
 });
