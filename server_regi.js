@@ -31,9 +31,7 @@ app.use(express.static(publicDir, { etag: false, maxAge: 0 }));
 const TILE_CACHE_BASE = path.join(__dirname, "tilecache");
 if (!fs.existsSync(TILE_CACHE_BASE)) fs.mkdirSync(TILE_CACHE_BASE, { recursive: true });
 
-const sharp = require("sharp");
-
-// Europe bounding box
+// HU bounding box
 const EUR = {
   minLat: 45.0,
   maxLat: 20.0,
@@ -41,13 +39,11 @@ const EUR = {
   maxLon: 23.0
 };
 
-// Converts tile y/z → latitude
+// Converts tile x/y/z → lat/lon
 function tile2lat(y, z) {
   const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
   return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 }
-
-// Converts tile x/z → longitude
 function tile2lon(x, z) {
   return (x / Math.pow(2, z)) * 360 - 180;
 }
@@ -63,77 +59,71 @@ function isTileInEurope(x, y, z) {
   );
 }
 
-// ---------------- CLEANUP: delete tiles older than 7 days ----------------
-const CLEANUP_DAYS = 7;
-
+// ------ CLEANUP: delete tiles older than 7 days ------
+const CLEANUP_DAYS = 0.5;
 setInterval(() => {
   const cutoff = Date.now() - CLEANUP_DAYS * 24 * 3600 * 1000;
 
-  for (const layer of fs.readdirSync(TILE_CACHE_BASE)) {
-    const layerDir = path.join(TILE_CACHE_BASE, layer);
-
-    for (const file of fs.readdirSync(layerDir)) {
-      const fp = path.join(layerDir, file);
+  function cleanupDir(dir) {
+    if (!fs.existsSync(dir)) return;
+    for (const file of fs.readdirSync(dir)) {
+      const fp = path.join(dir, file);
       const st = fs.statSync(fp);
       if (st.mtimeMs < cutoff) fs.unlinkSync(fp);
     }
   }
-}, 3600 * 1000); // cleanup every hour
 
-// ---------------- TILE PROXY WITH WEBP COMPRESSION ----------------
-app.get("/tiles/:layer/:z/:x/:y.webp", async (req, res) => {
+  for (const layer of fs.readdirSync(TILE_CACHE_BASE)) {
+    const layerDir = path.join(TILE_CACHE_BASE, layer);
+    cleanupDir(layerDir);
+  }
+}, 3600 * 1000); // run every hour
+
+// ------ TILE PROXY ------
+app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
   const { layer, z, x, y } = req.params;
   const zoom = parseInt(z, 10);
   const X = parseInt(x, 10);
   const Y = parseInt(y, 10);
 
-  // Cache only zoom 6–17 inside Europe
-  const cacheEnabled = zoom >= 6 && zoom <= 17;
+  // Only cache zoom 6→15
+  const cacheEnabled = zoom >= 6 && zoom <= 15;
+
+  // Only cache if tile is inside Europe
   const inEurope = isTileInEurope(X, Y, zoom);
 
   const layerDir = path.join(TILE_CACHE_BASE, layer);
-  if (cacheEnabled && inEurope && !fs.existsSync(layerDir)) {
+  if (cacheEnabled && inEurope && !fs.existsSync(layerDir))
     fs.mkdirSync(layerDir, { recursive: true });
-  }
 
-  const cachePath = path.join(layerDir, `${z}_${x}_${y}.webp`);
-
-  // Serve cached WebP tile
-  if (cacheEnabled && inEurope && fs.existsSync(cachePath)) {
-    res.setHeader("Content-Type", "image/webp");
-    return res.sendFile(cachePath);
-  }
+  const cachePath = path.join(layerDir, `${z}_${x}_${y}.png`);
 
   try {
-    // Fetch PNG tile from ORM
-    const url = `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`;
+    // Serve from cache
+    if (cacheEnabled && inEurope && fs.existsSync(cachePath)) {
+      res.setHeader("Content-Type", "image/png");
+      return res.sendFile(cachePath);
+    }
 
+    // Fetch from ORM
+    const url = `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`;
     const response = await fetch(url, {
       headers: {
         "User-Agent": "VonatinfoTileProxy/1.0",
-        "Referer": "https://www.openrailwaymap.org/",
-      },
+        "Referer": "https://www.openrailwaymap.org/"
+      }
     });
 
-    if (!response.ok) {
+    if (!response.ok)
       return res.status(response.status).send("tile not available");
-    }
 
-    const pngBuffer = await response.buffer();
+    const buffer = await response.buffer();
 
-    // Convert PNG → WebP
-    const webpBuffer = await sharp(pngBuffer)
-      .webp({ quality: 80 }) // good balance: ~60% smaller
-      .toBuffer();
+    // Save only European tiles and zoom 6–15
+    if (cacheEnabled && inEurope) fs.writeFile(cachePath, buffer, () => {});
 
-    // Save WebP if inside Europe + zoom range
-    if (cacheEnabled && inEurope) {
-      fs.writeFile(cachePath, webpBuffer, () => {});
-    }
-
-    // Return the WebP tile
-    res.setHeader("Content-Type", "image/webp");
-    res.send(webpBuffer);
+    res.setHeader("Content-Type", "image/png");
+    res.send(buffer);
 
   } catch (err) {
     console.error("Tile proxy error:", err);
