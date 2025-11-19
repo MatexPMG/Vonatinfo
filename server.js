@@ -31,12 +31,12 @@ app.use(express.static(publicDir, { etag: false, maxAge: 0 }));
 const TILE_CACHE_BASE = path.join(__dirname, "tilecache");
 if (!fs.existsSync(TILE_CACHE_BASE)) fs.mkdirSync(TILE_CACHE_BASE, { recursive: true });
 
-// Europe bounding box
+// HU bounding box
 const EUR = {
-  minLat: 34.0,
-  maxLat: 72.0,
-  minLon: -12.0,
-  maxLon: 32.0
+  minLat: 45.0,
+  maxLat: 20.0,
+  minLon: 16.0,
+  maxLon: 23.0
 };
 
 // Converts tile x/y/z → lat/lon
