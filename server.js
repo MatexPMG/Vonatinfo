@@ -33,10 +33,10 @@ if (!fs.existsSync(TILE_CACHE_BASE)) fs.mkdirSync(TILE_CACHE_BASE, { recursive: 
 
 // Europe bounding box
 const EUR = {
-  minLat: 34.0,
-  maxLat: 72.0,
-  minLon: -12.0,
-  maxLon: 32.0
+  minLat: 45.0,
+  maxLat: 20.0,
+  minLon: 16.0,
+  maxLon: 23.0
 };
 
 // Converts tile x/y/z → lat/lon
@@ -59,7 +59,7 @@ function isTileInEurope(x, y, z) {
   );
 }
 
-// ------ CLEANUP: delete tiles older than 7 days ------
+// ------ CLEANUP ------
 const CLEANUP_DAYS = 0.5;
 setInterval(() => {
   const cutoff = Date.now() - CLEANUP_DAYS * 24 * 3600 * 1000;
@@ -131,7 +131,7 @@ app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
   }
 });
 
-//orm cache ende
+//orm cache end
 //
 
 app.get("/api/timetables", (req, res) => {
