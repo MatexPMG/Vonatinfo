@@ -25,87 +25,27 @@ let latestFull = [];
 
 app.use(express.static(publicDir, { etag: false, maxAge: 0 }));
 
-//orm cache start
-//
+//ORM tilechache
 
-const TILE_CACHE_BASE = path.join(__dirname, "tilecache");
-if (!fs.existsSync(TILE_CACHE_BASE)) fs.mkdirSync(TILE_CACHE_BASE, { recursive: true });
+const TILE_CACHE = path.join(__dirname, "tilecache");
+if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
 
-// Europe bounding box
-const EUR = {
-  minLat: 45.0,
-  maxLat: 20.0,
-  minLon: 16.0,
-  maxLon: 23.0
-};
-
-// Converts tile x/y/z → lat/lon
-function tile2lat(y, z) {
-  const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
-  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
-}
-function tile2lon(x, z) {
-  return (x / Math.pow(2, z)) * 360 - 180;
-}
-
-function isTileInEurope(x, y, z) {
-  const lat = tile2lat(y, z);
-  const lon = tile2lon(x, z);
-  return (
-    lat >= EUR.minLat &&
-    lat <= EUR.maxLat &&
-    lon >= EUR.minLon &&
-    lon <= EUR.maxLon
-  );
-}
-
-// ------ CLEANUP ------
-const CLEANUP_DAYS = 0.5;
-setInterval(() => {
-  const cutoff = Date.now() - CLEANUP_DAYS * 24 * 3600 * 1000;
-
-  function cleanupDir(dir) {
-    if (!fs.existsSync(dir)) return;
-    for (const file of fs.readdirSync(dir)) {
-      const fp = path.join(dir, file);
-      const st = fs.statSync(fp);
-      if (st.mtimeMs < cutoff) fs.unlinkSync(fp);
-    }
-  }
-
-  for (const layer of fs.readdirSync(TILE_CACHE_BASE)) {
-    const layerDir = path.join(TILE_CACHE_BASE, layer);
-    cleanupDir(layerDir);
-  }
-}, 3600 * 1000); // run every hour
-
-// ------ TILE PROXY ------
+// Serve ORM tiles from /tiles/{z}/{x}/{y}.png
 app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
   const { layer, z, x, y } = req.params;
-  const zoom = parseInt(z, 10);
-  const X = parseInt(x, 10);
-  const Y = parseInt(y, 10);
+  const TILE_CACHE = path.join(__dirname, "tilecache", layer);
+  if (!fs.existsSync(TILE_CACHE)) fs.mkdirSync(TILE_CACHE, { recursive: true });
 
-  // Only cache zoom 6→15
-  const cacheEnabled = zoom >= 6 && zoom <= 15;
-
-  // Only cache if tile is inside Europe
-  const inEurope = isTileInEurope(X, Y, zoom);
-
-  const layerDir = path.join(TILE_CACHE_BASE, layer);
-  if (cacheEnabled && inEurope && !fs.existsSync(layerDir))
-    fs.mkdirSync(layerDir, { recursive: true });
-
-  const cachePath = path.join(layerDir, `${z}_${x}_${y}.png`);
+  const cachePath = path.join(TILE_CACHE, `${z}_${x}_${y}.png`);
 
   try {
-    // Serve from cache
-    if (cacheEnabled && inEurope && fs.existsSync(cachePath)) {
+    // Serve from cache if exists
+    if (fs.existsSync(cachePath)) {
       res.setHeader("Content-Type", "image/png");
       return res.sendFile(cachePath);
     }
 
-    // Fetch from ORM
+    // Fetch from OpenRailwayMap
     const url = `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`;
     const response = await fetch(url, {
       headers: {
@@ -114,25 +54,22 @@ app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
       }
     });
 
-    if (!response.ok)
+    if (!response.ok) {
+      console.log(`❌ ORM returned ${response.status} for ${layer}/${z}/${x}/${y}`);
       return res.status(response.status).send("tile not available");
+    }
 
     const buffer = await response.buffer();
-
-    // Save only European tiles and zoom 6–15
-    if (cacheEnabled && inEurope) fs.writeFile(cachePath, buffer, () => {});
+    fs.writeFile(cachePath, buffer, () => {}); // Save to cache
 
     res.setHeader("Content-Type", "image/png");
-    res.send(buffer);
+    return res.send(buffer);
 
   } catch (err) {
-    console.error("Tile proxy error:", err);
-    res.status(500).send("Internal tile proxy error");
+    console.error("Tile proxy error:", err.message);
+    return res.status(500).send("Internal tile proxy error");
   }
 });
-
-//orm cache end
-//
 
 app.get("/api/timetables", (req, res) => {
   res.json({ data: { vehiclePositions: latestFull } });
