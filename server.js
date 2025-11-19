@@ -86,8 +86,8 @@ app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
   const X = parseInt(x, 10);
   const Y = parseInt(y, 10);
 
-  // Only cache zoom 6→16
-  const cacheEnabled = zoom >= 6 && zoom <= 16;
+  // Only cache zoom 6→15
+  const cacheEnabled = zoom >= 6 && zoom <= 15;
 
   // Only cache if tile is inside Europe
   const inEurope = isTileInEurope(X, Y, zoom);
@@ -119,7 +119,7 @@ app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
 
     const buffer = await response.buffer();
 
-    // Save only European tiles and zoom 6–16
+    // Save only European tiles and zoom 6–15
     if (cacheEnabled && inEurope) fs.writeFile(cachePath, buffer, () => {});
 
     res.setHeader("Content-Type", "image/png");
