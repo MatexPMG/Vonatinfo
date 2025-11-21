@@ -360,24 +360,21 @@ body {
 
 .train-info td.real {
   text-align: left;
-  font-weight: bold;
+  font-weight: normal;
 }
 
 .train-info td.real.early {
   color: rgba(0, 68, 141, 0.75);;
-  font-weight: lighter;
   font-style: italic;
 }
 
 .train-info td.real.ontime {
   color: rgb(0, 140, 0);
-  font-weight: lighter;
   font-style: italic;
 }
 
 .train-info td.real.delayed {
   color: rgb(255, 0, 17);
-  font-weight: lighter;
   font-style: italic;
 }
 
