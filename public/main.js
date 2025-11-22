@@ -12,7 +12,7 @@ function init() {
         center: [47.18, 19.5],
         zoom: 8,
         minZoom: 6,
-        maxZoom: 15,
+        maxZoom: 17,
         fadeAnimation: false,
         maxBounds: [
             [42.18, 4.5],
