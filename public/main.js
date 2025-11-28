@@ -348,8 +348,20 @@ function TTupdate(train) {
       console.error('Error fetching timetable:', err);
     });
   }
+
   fetchAndRender();
-  trainInfoUpdater = setInterval(fetchAndRender, 10 * 1000);
+
+  function scheduleNextMinute() {
+    const now = new Date();
+    const msToNextMinute = (63 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+    trainInfoUpdater = setTimeout(() => {
+      fetchAndRender();
+      trainInfoUpdater = setInterval(fetchAndRender, 60 * 1000);
+    }, msToNextMinute);
+  }
+
+  scheduleNextMinute();
 }
 
 function showTrainInfo(train) {
