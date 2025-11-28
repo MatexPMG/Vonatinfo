@@ -392,6 +392,8 @@ body {
   left: 10;
   width: 282;
 
+  max-width: 59vh;
+
   background: rgb(255, 255, 255);
   background-clip: padding-box;
   border: 2px solid rgba(0, 0, 0, 0.2);
