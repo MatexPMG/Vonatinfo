@@ -119,7 +119,7 @@ function markers() {
 
           if (sel) map.removeLayer(sel);
           sel = L.circleMarker([lat, lon], {
-            radius: 22,
+            radius: window.innerWidth < 1080 ? 22 * 1.5 : 22,
             color: 'aqua',
             fillColor: 'aqua',
             fillOpacity: 0.75,
