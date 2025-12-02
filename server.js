@@ -37,7 +37,7 @@ app.get("/", (req, res) => {
   res.send("Udv itt a Vonatinfo backendjen :)");
 });
 
-const url = "https://emma.mav.hu//otp2-backend/otp/routers/default/index/graphql";
+const url = "https://mavplusz.hu//otp2-backend/otp/routers/default/index/graphql";
 
 const FULL_QUERY = {
   query: `
