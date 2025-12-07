@@ -336,6 +336,11 @@ for (const j of jnyL) {
     }
   }
 
+  let speed = 1;
+  if (heading=null) {
+    speed=0
+  }
+
   lastPositions[tripShortName] = { lat, lon };
 
   const trainObj = {
@@ -343,7 +348,7 @@ for (const j of jnyL) {
     lat,
     lon,
     heading,
-    speed: 1, //heading miatt
+    speed, //heading miatt
     lastUpdated: Math.floor(Date.now() / 1000),
     nextStop: { arrivalDelay: null, stopName: null },
     tripShortName: nr + " " + cat,
