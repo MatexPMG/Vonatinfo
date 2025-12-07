@@ -562,7 +562,7 @@ function updateLocoSpeed(train) {
   const speedElem = document.getElementById('loco-speed');
   if (!speedElem || !train) return;
 
-  const speed = isRailjet ? "N/A" : Math.round(train.speed * 3.6) || '0';
+  const speed = (train.vehicleId === "railjet") ? "N/A" : Math.round(train.speed * 3.6) || '0';
   speedElem.textContent = `${speed} km/h`;
 }
 
