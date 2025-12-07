@@ -328,6 +328,7 @@ for (const j of jnyL) {
   const tripShortName = nr + " " + cat;
 
   let heading = null;
+  let speed = 1;
   if (lastPositions[tripShortName]) {
     const prev = lastPositions[tripShortName];
 
@@ -336,12 +337,11 @@ for (const j of jnyL) {
     }
   }
 
-  let speed = 1;
-  if (heading=null) {
-    speed=0
-  }
-
   lastPositions[tripShortName] = { lat, lon };
+
+  if (heading === null) {
+    speed = 0;
+  }
 
   const trainObj = {
     vehicleId: "railjet",
