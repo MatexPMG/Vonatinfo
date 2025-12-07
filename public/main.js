@@ -67,7 +67,7 @@ let tDMap = new Map();
 let click = false;
 
 function markers() {
-  fetch('https://13213-production.up.railway.app/api/trains')
+  fetch('https://vonatinfo-production.up.railway.app/api/trains')
     .then(res => res.json())
     .then(json => {    
       tLayer.clearLayers();
@@ -335,7 +335,7 @@ function TTupdate(train) {
   function fetchAndRender() {
     if (!train?.tripShortName) return;
 
-    fetch('https://13213-production.up.railway.app/api/timetables', {
+    fetch('https://vonatinfo-production.up.railway.app/api/timetables', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
