@@ -221,40 +221,64 @@ async function fetchFull() {
   });
 }
 
-
 // oebb resz
-const hafas = "https://fahrplan.oebb.at/gate";
-const today = new Date().toISOString().split("T")[0].replace(/-/g, "");
 
-const payload = {
-  id: "v34xpssuk4asggwg",
-  ver: "1.88",
-  lang: "eng",
-  auth: { type: "AID", aid: "5vHavmuWPWIfetEe" },
-  client: { id: "OEBB", type: "WEB", name: "webapp", l: "vs_webapp", v: 21804 },
-  formatted: false,
-  ext: "OEBB.14",
-  svcReqL: [
-    {
-      meth: "JourneyGeoPos",
-      req: {
-        rect: {
-          llCrd: { x: 17104947.509765629, y: 47407892.06010505 },
-          urCrd: { x: 19135605.468750004, y: 47948232.33587184 }
+function getDates() {
+  const now = new Date();
+
+  // YYYYMMDD for ÖBB
+  const today = now.toISOString().split("T")[0].replace(/-/g, "");
+
+  // Yesterday 23:00:00.000Z for MÁV
+  const yesterday = new Date(now - 86400000)
+    .toISOString()
+    .split("T")[0] + "T23:00:00.000Z";
+
+  return { today, yesterday };
+}
+
+const hafas = "https://fahrplan.oebb.at/gate";
+
+function buildOEBBPayload() {
+  const { today } = getDates();
+
+  return {
+    id: "v34xpssuk4asggwg",
+    ver: "1.88",
+    lang: "eng",
+    auth: { type: "AID", aid: "5vHavmuWPWIfetEe" },
+    client: {
+      id: "OEBB",
+      type: "WEB",
+      name: "webapp",
+      l: "vs_webapp",
+      v: 21804
+    },
+    formatted: false,
+    ext: "OEBB.14",
+    svcReqL: [
+      {
+        meth: "JourneyGeoPos",
+        req: {
+          rect: {
+            llCrd: { x: 17104947.509765629, y: 47407892.06010505 },
+            urCrd: { x: 19135605.46875, y: 47948232.33587184 }
+          },
+          perSize: 35000,
+          perStep: 5000,
+          onlyRT: true,
+          jnyFltrL: [{ type: "PROD", mode: "INC", value: "4101" }],
+          date: today  // ← NOW UPDATES DAILY
         },
-        perSize: 35000,
-        perStep: 5000,
-        onlyRT: true,
-        jnyFltrL: [{ type: "PROD", mode: "INC", value: "4101" }],
-        date: today
-      },
-      id: "1|3|"
-    }
-  ]
-};
+        id: "1|3|"
+      }
+    ]
+  };
+}
+
 
 async function fetchMAVTimetable(trainNumber) {
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0] + "T23:00:00.000Z";
+  const { yesterday } = getDates();
   const payload = {
     type: "TrainInfo",
     travelDate: yesterday,
@@ -299,6 +323,7 @@ function calculateHeading(lat1, lon1, lat2, lon2) {
 }
 
 async function fetchOEBB() {
+  const payload = buildOEBBPayload();
   try {
     const res = await fetch(hafas, {
       method: "POST",
@@ -315,7 +340,7 @@ async function fetchOEBB() {
 
     const unified = [];
 
-for (const j of jnyL) {
+ for (const j of jnyL) {
   const lat = j.pos?.y / 1e6;
   const lon = j.pos?.x / 1e6;
 
