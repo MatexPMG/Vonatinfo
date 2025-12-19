@@ -487,7 +487,7 @@ function isTileInEurope(x, y, z) {
 }
 
 // ------ CLEANUP ------
-const CLEANUP_DAYS = 1;
+const CLEANUP_DAYS = 20;
 setInterval(() => {
   const cutoff = Date.now() - CLEANUP_DAYS * 24 * 3600 * 1000;
 
@@ -504,7 +504,7 @@ setInterval(() => {
     const layerDir = path.join(TILE_CACHE_BASE, layer);
     cleanupDir(layerDir);
   }
-}, 3600 * 1000); // run every hour
+}, 3600 * 10000); // run every hour
 
 // ------ TILE PROXY ------
 app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
