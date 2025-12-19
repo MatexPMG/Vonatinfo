@@ -416,7 +416,7 @@ async function fetchOEBB() {
       }
 
       return {
-        stop: { name: stop.station.name, platformCode: stop.endTrack || null },
+        stop: { name: stop.station.name, platformCode: stop.endTrack || null, gtfsId: `1:${stop.station.code}_0` },
         scheduledArrival,
         arrivalDelay,
         scheduledDeparture,
