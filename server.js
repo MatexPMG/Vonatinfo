@@ -1,10 +1,8 @@
 const express = require("express");
 const fs = require("fs");
-const fsp = require("fs/promises");
 const path = require("path");
 const fetch = require("node-fetch");
 const compression = require("compression");
-const pLimit = require("p-limit");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -453,126 +451,6 @@ async function fetchOEBB() {
 
 fetchFull();
 setInterval(fetchFull, 15000);
-
-//orm cache start
-//
-
-const TILE_CACHE_BASE = path.join(process.cwd(), "tilecache");
-const limit = pLimit(6);
-
-fsp.mkdir(TILE_CACHE_BASE, { recursive: true }).catch(console.error);
-
-// ---------------- EUROPE BBOX ----------------
-const EUR = { minLat: 20, maxLat: 45, minLon: 16, maxLon: 23 };
-
-function tile2lat(y, z) {
-  const n = Math.PI - (2 * Math.PI * y) / (1 << z);
-  return (180 / Math.PI) * Math.atan(Math.sinh(n));
-}
-function tile2lon(x, z) {
-  return (x / (1 << z)) * 360 - 180;
-}
-function isTileInEurope(x, y, z) {
-  const lat = tile2lat(y, z);
-  const lon = tile2lon(x, z);
-  return lat >= EUR.minLat && lat <= EUR.maxLat &&
-         lon >= EUR.minLon && lon <= EUR.maxLon;
-}
-
-// ---------------- TILE ROUTE ----------------
-app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
-  const { layer, z, x, y } = req.params;
-
-  // simple layer sanitization
-  if (!/^[a-z0-9_-]+$/i.test(layer)) return res.sendStatus(400);
-
-  const Z = Number(z), X = Number(x), Y = Number(y);
-  if (![Z, X, Y].every(Number.isInteger)) return res.sendStatus(400);
-
-  const cacheEnabled = Z >= 6 && Z <= 15;
-  const inEurope = isTileInEurope(X, Y, Z);
-
-  const tilePath = path.join(TILE_CACHE_BASE, layer, z, x, `${y}.png`);
-
-  if (cacheEnabled && inEurope) {
-    try {
-      const data = await fsp.readFile(tilePath);
-      res.setHeader("Content-Type", "image/png");
-      res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
-      return res.end(data);
-    } catch {}
-  }
-
-  try {
-    const buffer = await limit(async () => {
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 8000);
-
-      try {
-        const r = await fetch(
-          `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`,
-          {
-            headers: {
-              "User-Agent": "VonatinfoTileProxy/1.0",
-              "Referer": "https://www.openrailwaymap.org/"
-            },
-            signal: controller.signal
-          }
-        );
-
-        if (!r.ok) throw new Error(`Upstream ${r.status}`);
-        return await r.buffer();
-      } finally {
-        clearTimeout(t);
-      }
-    });
-
-    if (cacheEnabled && inEurope) {
-      await fsp.mkdir(path.dirname(tilePath), { recursive: true });
-      fsp.writeFile(tilePath, buffer).catch(() => {});
-    }
-
-    res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", "public, max-age=86400, stale-while-revalidate=3600");
-    res.end(buffer);
-
-  } catch (err) {
-    console.error("Tile fetch failed:", err.message);
-    res.sendStatus(502);
-  }
-});
-
-// ---------------- CLEANUP ----------------
-async function cleanupCache(days = 20) {
-  const cutoff = Date.now() - days * 86400000;
-
-  async function walk(dir) {
-    let entries;
-    try {
-      entries = await fsp.readdir(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-
-    for (const e of entries) {
-      const fp = path.join(dir, e.name);
-      if (e.isDirectory()) await walk(fp);
-      else {
-        try {
-          const st = await fsp.stat(fp);
-          if (st.mtimeMs < cutoff) await fsp.unlink(fp);
-        } catch {}
-      }
-    }
-  }
-
-  walk(TILE_CACHE_BASE).catch(console.error);
-}
-
-setInterval(() => cleanupCache(20), 86400000);
-
-//orm cache end
-//
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`🚉 server OK`);
