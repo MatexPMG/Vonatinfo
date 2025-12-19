@@ -455,26 +455,26 @@ setInterval(fetchFull, 15000);
 //orm cache start
 //
 
-const TILE_CACHE_BASE = path.join(__dirname, "tilecache");
-if (!fs.existsSync(TILE_CACHE_BASE)) fs.mkdirSync(TILE_CACHE_BASE, { recursive: true });
+const TILE_CACHE_BASE = path.join(process.cwd(), "tilecache");
+const limit = pLimit(6); // max 6 concurrent upstream requests
 
-// Europe bounding box
+await fs.mkdir(TILE_CACHE_BASE, { recursive: true });
+
+// ---------------- EUROPE BBOX ----------------
 const EUR = {
-  minLat: 20.0,  // south
-  maxLat: 45.0,  // north
-  minLon: 16.0,  // west
-  maxLon: 23.0   // east
+  minLat: 20.0,
+  maxLat: 45.0,
+  minLon: 16.0,
+  maxLon: 23.0
 };
 
-// Converts tile x/y/z → lat/lon
 function tile2lat(y, z) {
-  const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
-  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+  const n = Math.PI - (2 * Math.PI * y) / (1 << z);
+  return (180 / Math.PI) * Math.atan(Math.sinh(n));
 }
 function tile2lon(x, z) {
-  return (x / Math.pow(2, z)) * 360 - 180;
+  return (x / (1 << z)) * 360 - 180;
 }
-
 function isTileInEurope(x, y, z) {
   const lat = tile2lat(y, z);
   const lon = tile2lon(x, z);
@@ -486,77 +486,89 @@ function isTileInEurope(x, y, z) {
   );
 }
 
-// ------ CLEANUP ------
-const CLEANUP_DAYS = 20;
-setInterval(() => {
-  const cutoff = Date.now() - CLEANUP_DAYS * 24 * 3600 * 1000;
-
-  function cleanupDir(dir) {
-    if (!fs.existsSync(dir)) return;
-    for (const file of fs.readdirSync(dir)) {
-      const fp = path.join(dir, file);
-      const st = fs.statSync(fp);
-      if (st.mtimeMs < cutoff) fs.unlinkSync(fp);
-    }
-  }
-
-  for (const layer of fs.readdirSync(TILE_CACHE_BASE)) {
-    const layerDir = path.join(TILE_CACHE_BASE, layer);
-    cleanupDir(layerDir);
-  }
-}, 3600 * 10000); // run every hour
-
-// ------ TILE PROXY ------
+// ---------------- TILE ROUTE ----------------
 app.get("/tiles/:layer/:z/:x/:y.png", async (req, res) => {
   const { layer, z, x, y } = req.params;
-  const zoom = parseInt(z, 10);
-  const X = parseInt(x, 10);
-  const Y = parseInt(y, 10);
+  const Z = Number(z), X = Number(x), Y = Number(y);
 
-  // Only cache zoom 6→15
-  const cacheEnabled = zoom >= 6 && zoom <= 15;
+  if (!Number.isInteger(Z) || !Number.isInteger(X) || !Number.isInteger(Y))
+    return res.sendStatus(400);
 
-  // Only cache if tile is inside Europe
-  const inEurope = isTileInEurope(X, Y, zoom);
+  const cacheEnabled = Z >= 6 && Z <= 15;
+  const inEurope = isTileInEurope(X, Y, Z);
 
-  const layerDir = path.join(TILE_CACHE_BASE, layer);
-  if (cacheEnabled && inEurope && !fs.existsSync(layerDir))
-    fs.mkdirSync(layerDir, { recursive: true });
+  const tilePath = path.join(
+    TILE_CACHE_BASE,
+    layer,
+    z,
+    x,
+    `${y}.png`
+  );
 
-  const cachePath = path.join(layerDir, `${z}_${x}_${y}.png`);
-
-  try {
-    // Serve from cache
-    if (cacheEnabled && inEurope && fs.existsSync(cachePath)) {
+  // -------- SERVE FROM CACHE --------
+  if (cacheEnabled && inEurope) {
+    try {
+      const data = await fs.readFile(tilePath);
       res.setHeader("Content-Type", "image/png");
-      return res.sendFile(cachePath);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return res.end(data);
+    } catch {
+      // cache miss → fetch
     }
+  }
 
-    // Fetch from ORM
-    const url = `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`;
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "VonatinfoTileProxy/1.0",
-        "Referer": "https://www.openrailwaymap.org/"
-      }
+  // -------- FETCH FROM UPSTREAM (LIMITED) --------
+  try {
+    const buffer = await limit(async () => {
+      const url = `https://tiles.openrailwaymap.org/${layer}/${z}/${x}/${y}.png`;
+      const r = await fetch(url, {
+        headers: {
+          "User-Agent": "VonatinfoTileProxy/1.0",
+          "Referer": "https://www.openrailwaymap.org/"
+        },
+        timeout: 8000
+      });
+
+      if (!r.ok) throw new Error(`Upstream ${r.status}`);
+      return r.buffer();
     });
 
-    if (!response.ok)
-      return res.status(response.status).send("tile not available");
-
-    const buffer = await response.buffer();
-
-    // Save only European tiles and zoom 6–15
-    if (cacheEnabled && inEurope) fs.writeFile(cachePath, buffer, () => {});
+    // -------- SAVE TO CACHE --------
+    if (cacheEnabled && inEurope) {
+      await fs.mkdir(path.dirname(tilePath), { recursive: true });
+      fs.writeFile(tilePath, buffer).catch(() => {});
+    }
 
     res.setHeader("Content-Type", "image/png");
-    res.send(buffer);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.end(buffer);
 
   } catch (err) {
-    console.error("Tile proxy error:", err);
-    res.status(500).send("Internal tile proxy error");
+    console.error("Tile fetch failed:", err.message);
+    res.sendStatus(502);
   }
 });
+
+async function cleanupCache(days = 20) {
+  const cutoff = Date.now() - days * 86400000;
+
+  async function walk(dir) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const fp = path.join(dir, e.name);
+      if (e.isDirectory()) await walk(fp);
+      else {
+        const st = await fs.stat(fp);
+        if (st.mtimeMs < cutoff) await fs.unlink(fp);
+      }
+    }
+  }
+
+  walk(TILE_CACHE_BASE).catch(console.error);
+}
+
+// run once a day
+setInterval(() => cleanupCache(20), 86400000);
 
 //orm cache end
 //
