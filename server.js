@@ -66,7 +66,7 @@ const FULL_QUERY = {
         tripShortName
         route { shortName }
         stoptimes {
-          stop { name platformCode }
+          stop { name platformCode gtfsId }
           scheduledArrival
           arrivalDelay
           scheduledDeparture
