@@ -200,6 +200,7 @@ async function fetchFull() {
     lastUpdated: t.lastUpdated,
     nextStop: t.nextStop ? { arrivalDelay: t.nextStop.arrivalDelay } : null,
     tripShortName: t.trip?.tripShortName,
+    og: t.trip?.departureStoptime?.stop?.name || "",
     dest: t.trip?.arrivalStoptime?.stop?.name || "",
     routeShortName: t.trip?.route?.shortName || ""
   }));
@@ -378,6 +379,7 @@ async function fetchOEBB() {
     lastUpdated: Math.floor(Date.now() / 1000),
     nextStop: { arrivalDelay: null, stopName: null },
     tripShortName: nr + " " + cat,
+    og: "",
     dest: j.dirTxt || null,
     routeShortName: "<span class=\"MNR2007\">&#481;</span>",
     trip: { stoptimes: [], tripGeometry: { points: "" } }
