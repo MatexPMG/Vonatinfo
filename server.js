@@ -377,6 +377,7 @@ async function fetchOEBB() {
     speed, //heading miatt
     lastUpdated: Math.floor(Date.now() / 1000),
     nextStop: { arrivalDelay: null },
+    tripShortName: nr + " " + cat,
     dest: j.dirTxt || null,
     trip: { stoptimes: [], tripGeometry: { points: "" } }
   };
@@ -424,9 +425,6 @@ async function fetchOEBB() {
 
 
         trainObj.trip = {
-          departureStoptime: {
-            stop: { name: stoptimes[0]?.stop.name || null }
-          },
           arrivalStoptime: {
             stop: { name: stoptimes[stoptimes.length - 1]?.stop.name || null }
           },
