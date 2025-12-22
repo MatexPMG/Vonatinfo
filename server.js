@@ -378,7 +378,6 @@ async function fetchOEBB() {
     lastUpdated: Math.floor(Date.now() / 1000),
     nextStop: { arrivalDelay: null },
     tripShortName: nr + " " + cat,
-    dest: j.dirTxt || null,
     trip: { stoptimes: [], tripGeometry: { points: "" } }
   };
 
