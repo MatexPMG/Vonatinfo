@@ -426,8 +426,6 @@ async function fetchOEBB() {
 
         trainObj.trip = {
           arrivalStoptime: {
-            scheduledArrival: stoptimes[stoptimes.length - 1]?.scheduledArrival || null,
-            arrivalDelay: stoptimes[stoptimes.length - 1]?.arrivalDelay || null,
             stop: { name: stoptimes[stoptimes.length - 1]?.stop.name || null }
           },
           alerts: [ { alertDescriptionText: "Vonatpozíció az ÖBB adatai alapján" }], // optional, fill if available
