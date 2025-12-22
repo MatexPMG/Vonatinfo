@@ -425,6 +425,9 @@ async function fetchOEBB() {
 
 
         trainObj.trip = {
+          departureStoptime: {
+            stop: { name: stoptimes[0]?.stop.name || null }
+          },
           arrivalStoptime: {
             stop: { name: stoptimes[stoptimes.length - 1]?.stop.name || null }
           },
