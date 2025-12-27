@@ -98,94 +98,24 @@ async function fetchGraphQL(query) {
 async function fetchFull() {
   const data = await fetchGraphQL(FULL_QUERY);
   if (!data?.data?.vehiclePositions) return;
-  const oebbTrains = await fetchOEBB();   // unified array
 
+  const oebbTrains = await fetchOEBB(); // unified array
 
-  const now = Math.floor(Date.now() / 1000);
-  const cutoff = 600; // 10 minutes
-  const UNIX24 = (() => {
-    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Budapest" }));
-    return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-  })();
+  // ---- Just overwrite trainMap with latest response ----
+  const trainMap = new Map();
 
-  // Keep current trains in a map
-  const trainMap = new Map(latestFull.map(t => [t.trip?.tripShortName, t]));
- for (const t of oebbTrains) {
-  const id = t.tripShortName;
-  if (!id) continue;
-  trainMap.set(id, t); // overwrite MAV version if duplicate
- }
-
-  // ---- Process new incoming vehicles ----
+  // Add MAV / GraphQL trains
   for (const t of data.data.vehiclePositions) {
-    const id = t.trip?.tripShortName;
+    const id = t.trip?.tripShortName || t.vehicleId;
     if (!id) continue;
-
-    const existing = trainMap.get(id);
-
-    // Compute new train's arrival time (seconds since midnight CET)
-    const arrNew = t.trip?.arrivalStoptime;
-    const arrivalTimeNew =
-      arrNew?.scheduledArrival != null
-        ? arrNew.scheduledArrival + (arrNew.arrivalDelay || 0)
-        : null;
-
-    if (existing) {
-      // Compute old train's arrival time
-      const arrOld = existing.trip?.arrivalStoptime;
-      const arrivalTimeOld =
-        arrOld?.scheduledArrival != null
-          ? arrOld.scheduledArrival + (arrOld.arrivalDelay || 0)
-          : null;
-
-      // If the new data refers to an already-arrived train, but the old one hasn't arrived yet → ignore update
-      if (
-        arrivalTimeNew != null &&
-        arrivalTimeOld != null &&
-        arrivalTimeNew < UNIX24 &&
-        arrivalTimeOld > UNIX24
-      ) {
-        continue; // ignore old/messed-up update
-      }
-
-      // Otherwise, update only if newer lastUpdated or later arrival time
-      if (
-        t.lastUpdated > existing.lastUpdated ||
-        (arrivalTimeNew != null && arrivalTimeOld != null && arrivalTimeNew >= arrivalTimeOld)
-      ) {
-        trainMap.set(id, t);
-      }
-    } else {
-      // New train — add to map
-      trainMap.set(id, t);
-    }
+    trainMap.set(id, t);
   }
 
-  // ---- Cleanup: remove old or finished trains ----
-  for (const [id, train] of trainMap) {
-    // Remove stale trains
-    if (now - train.lastUpdated > cutoff) {
-      trainMap.delete(id);
-      continue;
-    }
-
-    // Remove trains whose final arrival time has already passed
-  const arr = train.trip?.arrivalStoptime;
-  if (arr?.scheduledArrival != null) {
-    const arrivalTime = arr.scheduledArrival + (arr.arrivalDelay || 0);
-
-    // Get current time in seconds since midnight (Europe/Budapest)
-    const UNIX24 = (() => {
-      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Budapest" }));
-      return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-    })();
-
-    // Only delete if train arrived more than 2 minutes ago
-    // AND hasn't been updated in the last 2 minutes
-    if (UNIX24 > arrivalTime + 60 && now - train.lastUpdated > 60) {
-      trainMap.delete(id);
-    }
-    }
+  // Add ÖBB trains (overwrite if same ID)
+  for (const t of oebbTrains) {
+    const id = t.tripShortName || t.vehicleId;
+    if (!id) continue;
+    trainMap.set(id, t);
   }
 
   // ---- Save updated train data ----
