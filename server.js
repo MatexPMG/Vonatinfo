@@ -84,7 +84,12 @@ async function fetchGraphQL(query) {
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "User-Agent": "Mozilla/5.0", "Content-Type": "application/json" },
+      headers: { 
+        "User-Agent": "Mozilla/5.0", 
+        "Content-Type": "application/json",
+        "Referer": "https://mavplusz.hu/"
+        
+      },
       body: JSON.stringify(query)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
