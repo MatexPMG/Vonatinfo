@@ -83,7 +83,7 @@ const FULL_QUERY = {
 
 const agent = new https.Agent({
   servername: "mavplusz.hu",   // force SNI
-  rejectUnauthorized: true     // keep security
+  rejectUnauthorized: false     // keep security
 });
 
 async function fetchGraphQL(query) {
