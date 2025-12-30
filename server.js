@@ -85,10 +85,10 @@ async function fetchGraphQL(query) {
     const res = await fetch(url, {
       method: "POST",
       headers: { 
-        "User-Agent": "Mozilla/5.0", 
-        "Content-Type": "application/json",
-        "Origin": "https://mavplusz.hu",
-        "Referer": "https://mavplusz.hu/"
+    "content-type": "application/json",
+    "origin": "https://mavplusz.hu",
+    "referer": "https://mavplusz.hu/",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
       },
       body: JSON.stringify(query)
     });
