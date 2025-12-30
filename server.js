@@ -87,8 +87,8 @@ async function fetchGraphQL(query) {
       headers: { 
         "User-Agent": "Mozilla/5.0", 
         "Content-Type": "application/json",
+        "Origin": "https://mavplusz.hu",
         "Referer": "https://mavplusz.hu/"
-        
       },
       body: JSON.stringify(query)
     });
