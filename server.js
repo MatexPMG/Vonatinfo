@@ -2,7 +2,6 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
-const https = require("https")
 const compression = require("compression");
 
 const app = express();
@@ -81,22 +80,11 @@ const FULL_QUERY = {
   variables: {}
 };
 
-const agent = new https.Agent({
-  servername: "mavplusz.hu",   // force SNI
-  rejectUnauthorized: false     // keep security
-});
-
 async function fetchGraphQL(query) {
   try {
     const res = await fetch(url, {
       method: "POST",
-      agent,
-      headers: { 
-    "content-type": "application/json",
-    "origin": "https://mavplusz.hu",
-    "referer": "https://mavplusz.hu/",
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
-      },
+      headers: { "User-Agent": "Mozilla/5.0", "Content-Type": "application/json" },
       body: JSON.stringify(query)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
