@@ -101,19 +101,18 @@ async function fetchFull() {
 
   const oebbTrains = await fetchOEBB(); // unified array
 
-  // ---- Just overwrite trainMap with latest response ----
   const trainMap = new Map();
 
-  // Add MAV / GraphQL trains
-  for (const t of data.data.vehiclePositions) {
-    const id = t.trip?.tripShortName || t.vehicleId;
+  // ÖBB (rjx)
+  for (const t of oebbTrains) {
+    const id = t.tripShortName || t.vehicleId;
     if (!id) continue;
     trainMap.set(id, t);
   }
 
-  // Add ÖBB trains (overwrite if same ID)
-  for (const t of oebbTrains) {
-    const id = t.tripShortName || t.vehicleId;
+  // MAV
+  for (const t of data.data.vehiclePositions) {
+    const id = t.trip?.tripShortName || t.vehicleId;
     if (!id) continue;
     trainMap.set(id, t);
   }
