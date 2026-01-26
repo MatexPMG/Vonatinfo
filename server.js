@@ -103,6 +103,13 @@ async function fetchFull() {
 
   const trainMap = new Map();
 
+  const extraRes = await fetch("https://kozlekedesiklub.hu/vonatinfo/extra.json");
+  let extraTrains = [];
+  if (extraRes.ok) {
+    const extraData = await extraRes.json();
+    extraTrains = Array.isArray(extraData) ? extraData : [extraData];
+  }
+
   // ÖBB (rjx)
   for (const t of oebbTrains) {
     const id = t.tripShortName || t.vehicleId;
@@ -114,6 +121,12 @@ async function fetchFull() {
   for (const t of data.data.vehiclePositions) {
     const id = t.trip?.tripShortName || t.vehicleId;
     if (!id) continue;
+    trainMap.set(id, t);
+  }
+
+  //extra
+  for (const t of extraTrains) {
+    const id = t.trip?.tripShortName || t.vehicleId || Math.random().toString(36);
     trainMap.set(id, t);
   }
 
