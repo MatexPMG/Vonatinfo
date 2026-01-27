@@ -106,9 +106,21 @@ async function fetchFull() {
   const extraRes = await fetch("https://kozlekedesiklub.hu/vonatinfo/extra.json");
   let extraTrains = [];
   if (extraRes.ok) {
+  try {
     const extraData = await extraRes.json();
-    extraTrains = Array.isArray(extraData) ? extraData : [extraData];
+
+    if (Array.isArray(extraData)) {
+      extraTrains = extraData;
+    } else if (extraData && typeof extraData === "object") {
+      extraTrains = [extraData];
+    } else {
+      extraTrains = [];
+    }
+    } catch (e) {
+      extraTrains = [];
+    }
   }
+
 
   // ÖBB (rjx)
   for (const t of oebbTrains) {
