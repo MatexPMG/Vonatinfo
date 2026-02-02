@@ -146,17 +146,29 @@ async function fetchFull() {
   const newFull = Array.from(trainMap.values());
   latestFull = newFull;
 
-  const newLight = newFull.map(t => ({    vehicleId: t.vehicleId || "",
-    lat: t.lat,
-    lon: t.lon,
-    heading: t.heading,
-    speed: t.speed,
-    lastUpdated: t.lastUpdated,
-    nextStop: t.nextStop ? { arrivalDelay: t.nextStop.arrivalDelay } : null,
-    tripShortName: t.trip?.tripShortName,
-    dest: t.trip?.arrivalStoptime?.stop?.name || "",
-    routeShortName: t.trip?.route?.shortName || ""
-  }));
+  const newLight = {
+    type: "FeatureCollection",
+    features: newFull
+      .filter(t => Number.isFinite(t.lat) && Number.isFinite(t.lon))
+      .map(t => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [t.lon, t.lat] // [lon, lat]
+        },
+        properties: {
+          vehicleId: t.vehicleId || "",
+          heading: t.heading,
+          speed: t.speed,
+          lastUpdated: t.lastUpdated,
+          nextStop: t.nextStop ? { arrivalDelay: t.nextStop.arrivalDelay } : null,
+          tripShortName: t.trip?.tripShortName || "",
+          dest: t.trip?.arrivalStoptime?.stop?.name || "",
+          routeShortName: t.trip?.route?.shortName || ""
+        }
+      })
+    )
+  };
 
   latestTrains = newLight;
 
