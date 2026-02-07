@@ -342,7 +342,7 @@ async function fetchOEBB() {
     heading,
     speed, //heading miatt
     lastUpdated: Math.floor(Date.now() / 1000),
-    nextStop: { arrivalDelay: null },
+    nextStop: { name: null, arrivalDelay: null },
     tripShortName: nr + " " + cat,
     trip: { stoptimes: [], tripGeometry: { points: "" } }
   };
