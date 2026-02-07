@@ -55,7 +55,7 @@ const FULL_QUERY = {
       heading
       speed
       lastUpdated
-      nextStop { name arrivalDelay }
+      nextStop { arrivalDelay stop { name } }
       trip {
         departureStoptime {
           stop { name }
@@ -161,7 +161,7 @@ async function fetchFull() {
           heading: t.heading,
           speed: t.speed,
           lastUpdated: t.lastUpdated,
-          nextStop: t.nextStop ? { name: t.nextStop.name, arrivalDelay: t.nextStop.arrivalDelay } : null,
+          nextStop: t.nextStop ? { arrivalDelay: t.nextStop.arrivalDelay } : null,
           tripShortName: t.trip?.tripShortName || "",
           dest: t.trip?.arrivalStoptime?.stop?.name || "",
           routeShortName: t.trip?.route?.shortName || ""
@@ -342,7 +342,7 @@ async function fetchOEBB() {
     heading,
     speed, //heading miatt
     lastUpdated: Math.floor(Date.now() / 1000),
-    nextStop: { name: null, arrivalDelay: null },
+    nextStop: { stop: { name: null }, arrivalDelay: null },
     tripShortName: nr + " " + cat,
     trip: { stoptimes: [], tripGeometry: { points: "" } }
   };
