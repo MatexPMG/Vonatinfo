@@ -413,8 +413,16 @@ async function fetchOEBB() {
   }
 }
 
-fetchFull();
-setInterval(fetchFull, 15000);
+async function l() {
+  try {
+    await fetchFull();
+  } catch (err) {
+    console.error(err);
+  }
+
+  setTimeout(l, 15000);
+}
+l();
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`🚉 server OK`);
