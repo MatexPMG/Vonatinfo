@@ -29,6 +29,16 @@ app.get("/api/timetables", (req, res) => {
   res.json({ data: { vehiclePositions: latestFull } });
 });
 
+app.post('/api/timetables', (req, res) => {
+  const { tripShortName } = req.body;
+if (!tripShortName) return res.status(400).json({ error: "Missing tripShortName" });
+
+const train = latestFull.find(t => t.trip?.tripShortName === tripShortName);
+if (!train) return res.status(404).json({ error: "Train not found" });
+
+res.json(train);
+});
+
 app.get("/api/trains", (req, res) => {
   res.json({ data: latestTrains });
 });
@@ -99,7 +109,7 @@ async function fetchFull() {
   const data = await fetchGraphQL(FULL_QUERY);
   if (!data?.data?.vehiclePositions) return;
 
-  const oebbTrains = await fetchOEBB(); // unified array
+  const oebbTrains = await fetchOEBB();
 
   const trainMap = new Map();
 
@@ -142,7 +152,6 @@ async function fetchFull() {
     trainMap.set(id, t);
   }
 
-  // ---- Save updated train data ----
   const newFull = Array.from(trainMap.values());
   latestFull = newFull;
 
@@ -176,16 +185,6 @@ async function fetchFull() {
   fs.writeFile(path.join(publicDir, "trains.json"), JSON.stringify({ data: newLight }), () => {});
 
   console.log(`Vonatok száma: ${(latestFull.length)-1} ✅`);
-
-  app.post('/api/timetables', (req, res) => {
-    const { tripShortName } = req.body;
-  if (!tripShortName) return res.status(400).json({ error: "Missing tripShortName" });
-
-  const train = latestFull.find(t => t.trip?.tripShortName === tripShortName);
-  if (!train) return res.status(404).json({ error: "Train not found" });
-
-  res.json(train);
-  });
 }
 
 // oebb resz
