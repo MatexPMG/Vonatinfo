@@ -424,6 +424,6 @@ async function l() {
 }
 l();
 
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, "127.0.0.1", () => {
   console.log(`🚉 server OK`);
 });
