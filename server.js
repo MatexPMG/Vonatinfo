@@ -25,10 +25,6 @@ let latestFull = [];
 
 app.use(express.static(publicDir, { etag: false, maxAge: 0 }));
 
-app.get("/api/timetables", (req, res) => {
-  res.json({ data: { vehiclePositions: latestFull } });
-});
-
 app.post('/api/timetables', (req, res) => {
   const { tripShortName } = req.body;
 if (!tripShortName) return res.status(400).json({ error: "Missing tripShortName" });
@@ -357,26 +353,42 @@ async function fetchOEBB() {
 
     let nextStopFound = false;
 
+    //-1 ora vmiert
     const stoptimes = scheduler.map(stop => {
-      const scheduledArrival = secondsSinceMidnight(stop.arrive);
-      const actualArrival = secondsSinceMidnight(stop.actualOrEstimatedArrive);
-      const arrivalDelay = actualArrival != null && scheduledArrival != null
-        ? actualArrival - scheduledArrival
-        : null;
+  const schedArrRaw = secondsSinceMidnight(stop.arrive);
+  const actualArrRaw = secondsSinceMidnight(stop.actualOrEstimatedArrive);
 
-      const scheduledDeparture = secondsSinceMidnight(stop.start) || scheduledArrival;
-      const actualDeparture = secondsSinceMidnight(stop.actualOrEstimatedStart);
-      const departureDelay = actualDeparture != null && scheduledDeparture != null
-        ? actualDeparture - scheduledDeparture
-        : arrivalDelay;
+  const scheduledArrival = schedArrRaw != null ? schedArrRaw - 3600 : null;
+  const actualArrival = actualArrRaw != null ? actualArrRaw - 3600 : null;
 
-      // Set next upcoming stop (only first one in the future)
-      if (!nextStopFound && actualArrival != null && actualArrival >= nowSec) {
-        trainObj.nextStop = {
-          arrivalDelay: arrivalDelay,
-        };
-        nextStopFound = true;
-      }
+  const arrivalDelay =
+    actualArrival != null && scheduledArrival != null
+      ? actualArrival - scheduledArrival
+      : null;
+
+  const schedDepRaw = secondsSinceMidnight(stop.start);
+  const actualDepRaw = secondsSinceMidnight(stop.actualOrEstimatedStart);
+
+  const scheduledDeparture =
+    schedDepRaw != null
+      ? schedDepRaw - 3600
+      : scheduledArrival;
+
+  const actualDeparture =
+    actualDepRaw != null ? actualDepRaw - 3600 : null;
+
+  const departureDelay =
+    actualDeparture != null && scheduledDeparture != null
+      ? actualDeparture - scheduledDeparture
+      : arrivalDelay;
+
+  // Set next upcoming stop (only first one in the future)
+  if (!nextStopFound && actualArrival != null && actualArrival >= nowSec) {
+    trainObj.nextStop = {
+      arrivalDelay
+    };
+    nextStopFound = true;
+  }
 
       return {
         stop: { name: stop.station.name, platformCode: stop.endTrack || null, gtfsId: `1:${stop.station.code}_0` },
@@ -424,6 +436,6 @@ async function l() {
 }
 l();
 
-app.listen(port, "0.0.0.0", () => {
+app.listen(port, "127.0.0.1", () => {
   console.log(`🚉 server OK`);
 });
